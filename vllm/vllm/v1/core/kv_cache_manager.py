@@ -178,6 +178,10 @@ class KVCacheManager:
         # (which happens when the request requires prompt logprobs
         # or calls a pooling model with all pooling).
         if not self.enable_caching or request.skip_reading_prefix_cache:
+            logger.info(
+                "[KVCACHE] SKIP prefix cache for %s, num_tokens=%d",
+                request.request_id, request.num_tokens,
+            )
             return self.empty_kv_cache_blocks, 0
 
         # NOTE: When all tokens hit the cache, we must recompute the last token
@@ -191,6 +195,14 @@ class KVCacheManager:
             self.coordinator.find_longest_cache_hit(
                 request.block_hashes, max_cache_hit_length
             )
+        )
+
+        logger.info(
+            "[KVCACHE] HIT for %s: num_tokens=%d, hit_tokens=%d, "
+            "block_ids=%s",
+            request.request_id, request.num_tokens,
+            num_new_computed_tokens,
+            [[b.block_id for b in group] for group in computed_blocks.blocks],
         )
 
         if self.log_stats:
@@ -371,7 +383,27 @@ class KVCacheManager:
             total_computed_tokens + num_new_tokens,
             request.num_tokens,
         )
+        num_cached_before = (
+            self.coordinator.single_type_managers[0].num_cached_block.get(
+                request.request_id, 0
+            )
+        )
+        logger.info(
+            "[ALLOC] %s: num_new_tokens=%d, num_new_computed=%d, "
+            "num_tokens_to_cache=%d, num_cached_before=%d",
+            request.request_id, num_new_tokens, num_new_computed_tokens,
+            num_tokens_to_cache, num_cached_before,
+        )
         self.coordinator.cache_blocks(request, num_tokens_to_cache)
+        num_cached_after = (
+            self.coordinator.single_type_managers[0].num_cached_block.get(
+                request.request_id, 0
+            )
+        )
+        logger.info(
+            "[ALLOC] %s: num_cached_after=%d",
+            request.request_id, num_cached_after,
+        )
 
         return self.create_kv_cache_blocks(new_blocks)
 

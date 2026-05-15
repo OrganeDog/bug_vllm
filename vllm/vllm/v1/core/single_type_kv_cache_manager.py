@@ -24,6 +24,8 @@ from vllm.v1.kv_cache_interface import (
 )
 from vllm.v1.request import Request
 
+logger = __import__("vllm.logger").logger.init_logger(__name__)
+
 
 class SingleTypeKVCacheManager(ABC):
     """
@@ -171,6 +173,13 @@ class SingleTypeKVCacheManager(ABC):
         # A new request.
         req_blocks = self.req_to_blocks[request_id]
         assert len(req_blocks) == 0
+
+        logger.info(
+            "[ALLOCCOMP] req=%s, num_new_computed_blocks=%d, "
+            "block_ids=%s",
+            request_id, len(new_computed_blocks),
+            [b.block_id for b in new_computed_blocks],
+        )
         num_total_computed_tokens = (
             num_local_computed_tokens + num_external_computed_tokens
         )

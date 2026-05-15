@@ -235,6 +235,12 @@ class BlockPool:
         """
         if num_cached_blocks >= num_full_blocks:
             return
+        logger.info(
+            "[POOL] cache_full_blocks: req=%s, num_cached=%d, num_full=%d, "
+            "block_ids=%s",
+            request.request_id, num_cached_blocks, num_full_blocks,
+            [b.block_id for b in blocks[num_cached_blocks:num_full_blocks]],
+        )
         new_full_blocks = blocks[num_cached_blocks:num_full_blocks]
         assert len(request.block_hashes) >= num_full_blocks
         if block_size == self.hash_block_size:
