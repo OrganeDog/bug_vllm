@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
-import os
-import warnings
 from collections.abc import Iterable, Sequence
 from typing import Any
 
@@ -237,11 +235,6 @@ class BlockPool:
         """
         if num_cached_blocks >= num_full_blocks:
             return
-        warnings.warn(
-            f"[POOL] cache_full_blocks: req={request.request_id}, "
-            f"num_cached={num_cached_blocks}, num_full={num_full_blocks}, "
-            f"block_ids={[b.block_id for b in blocks[num_cached_blocks:num_full_blocks]]}"
-        )
         new_full_blocks = blocks[num_cached_blocks:num_full_blocks]
         assert len(request.block_hashes) >= num_full_blocks
         if block_size == self.hash_block_size:

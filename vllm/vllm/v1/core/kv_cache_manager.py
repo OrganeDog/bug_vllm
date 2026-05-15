@@ -2,14 +2,9 @@
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
 import itertools
-import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Literal, overload
-
-def _debug(msg: str) -> None:
-    sys.stderr.write(f"[DEBUG] {msg}\n")
-    sys.stderr.flush()
 
 from vllm.distributed.kv_events import KVCacheEvent
 from vllm.logger import init_logger
@@ -183,7 +178,6 @@ class KVCacheManager:
         # (which happens when the request requires prompt logprobs
         # or calls a pooling model with all pooling).
         if not self.enable_caching or request.skip_reading_prefix_cache:
-            _debug(f"SKIP prefix cache for {request.request_id}, num_tokens={request.num_tokens}")
             return self.empty_kv_cache_blocks, 0
 
         # NOTE: When all tokens hit the cache, we must recompute the last token
@@ -199,12 +193,6 @@ class KVCacheManager:
             )
         )
 
-        _debug(
-            f"HIT for {request.request_id}: num_tokens={request.num_tokens}, "
-            f"hit_tokens={num_new_computed_tokens}, "
-            f"block_ids={[[b.block_id for b in group] for group in computed_blocks.blocks]}"
-        )
-
         if self.log_stats:
             assert self.prefix_cache_stats is not None
             self.prefix_cache_stats.record(
@@ -212,7 +200,8 @@ class KVCacheManager:
                 num_hits=num_new_computed_tokens,
                 preempted=request.num_preemptions > 0,
             )
-
+        print(computed_blocks)
+        print(num_new_computed_tokens)
         return self.create_kv_cache_blocks(computed_blocks), num_new_computed_tokens
 
     def allocate_slots(
@@ -383,25 +372,9 @@ class KVCacheManager:
             total_computed_tokens + num_new_tokens,
             request.num_tokens,
         )
-        num_cached_before = (
-            self.coordinator.single_type_managers[0].num_cached_block.get(
-                request.request_id, 0
-            )
-        )
-        warnings.warn(
-            f"[ALLOC] {request.request_id}: num_new_tokens={num_new_tokens}, "
-            f"num_new_computed={num_new_computed_tokens}, "
-            f"num_tokens_to_cache={num_tokens_to_cache}, "
-            f"num_cached_before={num_cached_before}")
         self.coordinator.cache_blocks(request, num_tokens_to_cache)
-        num_cached_after = (
-            self.coordinator.single_type_managers[0].num_cached_block.get(
-                request.request_id, 0
-            )
-        )
-        warnings.warn(
-            f"[ALLOC] {request.request_id}: num_cached_after={num_cached_after}")
 
+        print(self.create_kv_cache_blocks(new_blocks))
         return self.create_kv_cache_blocks(new_blocks)
 
     def free(self, request: Request) -> None:

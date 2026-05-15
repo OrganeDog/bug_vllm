@@ -161,7 +161,7 @@ class Scheduler(SchedulerInterface):
         # Priority queues for requests.
         self.waiting = create_request_queue(self.policy)
         self.running: list[Request] = []
-
+        print("✅ 成功加载我的源码！+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         # The request IDs that are finished in between the previous and the
         # current steps. This is used to notify the workers about the finished
         # requests so that they can free the cached states for those requests.
@@ -325,6 +325,20 @@ class Scheduler(SchedulerInterface):
         # num_tokens_with_spec. This is general enough to cover
         # chunked prefills, prefix caching, speculative decoding,
         # and the "jump decoding" optimization in the future.
+
+        # print("✅ 正在处理请求！正在调度！+++++++++++++++++++++++++++++++++")
+        # print(f"当前正在运行的请求数: {len(self.running)}")
+        # print(f"等待队列中的请求数: {len(self.waiting)}")
+        # 遍历当前正在运行的所有请求（通常是一个或多个）
+        for req_id, req_obj in self.requests.items():
+            # 提取关键信息
+            input_len = len(req_obj.prompt_token_ids)
+            output_len = len(req_obj.output_token_ids)
+            total_len = input_len + output_len
+            
+            # 打印精简版日志
+            print(f"🚀 [运行中] ID: {req_id[:8]} | 输入: {input_len} | 已生成: {output_len} | 状态: {req_obj.status}")
+
 
         scheduled_new_reqs: list[Request] = []
         scheduled_resumed_reqs: list[Request] = []
@@ -602,6 +616,26 @@ class Scheduler(SchedulerInterface):
                     new_computed_blocks, num_new_local_computed_tokens = (
                         self.kv_cache_manager.get_computed_blocks(request)
                     )
+
+
+                    # --- 在这下面添加打印 ---
+                    print(f"\n🎯 [PREFILL 检查] Request ID: {request.request_id[:8]}")
+                    print(f"   - 提示词总长度 (num_tokens): {request.num_tokens}")
+                    print(f"   - 命中的缓存 Token 数 (num_new_local_computed_tokens): {num_new_local_computed_tokens}")
+
+                    if num_new_local_computed_tokens > 0:
+                        # 这里的 new_computed_blocks 包含了命中的物理块信息
+                        # v1 的 KVCacheBlocks 通常包含 gpu_block_ids
+                        print(f"   - ✅ 发现前缀缓存！命中的物理块 ID: {new_computed_blocks.get_block_ids()}")
+                    else:
+                        print(f"   - ❌ 无缓存命中，将进行全量计算。")
+
+                    # 计算真正需要新计算的 Token 数
+                    num_new_tokens_to_compute = request.num_tokens - num_new_local_computed_tokens
+                    print(f"   - 本次实际需要计算的 Token 数: {num_new_tokens_to_compute}")
+
+
+
 
                     # Get externally-cached tokens if using a KVConnector.
                     if self.connector is not None:
