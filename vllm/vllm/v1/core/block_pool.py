@@ -4,7 +4,7 @@ import os
 from collections.abc import Iterable, Sequence
 from typing import Any
 
-_DEBUG_LOG = open(f"/tmp/debug_kv_{os.getpid()}.log", "a")
+_DEBUG_LOG = open("/tmp/debug_kv.log", "a")
 
 from vllm.distributed.kv_events import (
     MEDIUM_GPU,

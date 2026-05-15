@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Sequence
 
-_DEBUG_LOG = open(f"/tmp/debug_kv_{os.getpid()}.log", "a")
+_DEBUG_LOG = open("/tmp/debug_kv.log", "a")
 
 from vllm.utils.math_utils import cdiv
 from vllm.v1.core.block_pool import BlockPool
