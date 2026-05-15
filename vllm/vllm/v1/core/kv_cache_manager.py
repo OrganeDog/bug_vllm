@@ -2,12 +2,10 @@
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
 import itertools
-import os
+import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Literal, overload
-
-_DEBUG_LOG = open("/tmp/debug_kv.log", "a")
 
 from vllm.distributed.kv_events import KVCacheEvent
 from vllm.logger import init_logger
@@ -181,10 +179,10 @@ class KVCacheManager:
         # (which happens when the request requires prompt logprobs
         # or calls a pooling model with all pooling).
         if not self.enable_caching or request.skip_reading_prefix_cache:
-            _DEBUG_LOG.write(
+            warnings.warn(
                 f"[KVCACHE] SKIP prefix cache for {request.request_id}, "
-                f"num_tokens={request.num_tokens}\n")
-            _DEBUG_LOG.flush()
+                f"num_tokens={request.num_tokens}"
+            )
             return self.empty_kv_cache_blocks, 0
 
         # NOTE: When all tokens hit the cache, we must recompute the last token
@@ -200,11 +198,11 @@ class KVCacheManager:
             )
         )
 
-        _DEBUG_LOG.write(
+        warnings.warn(
             f"[KVCACHE] HIT for {request.request_id}: num_tokens={request.num_tokens}, "
             f"hit_tokens={num_new_computed_tokens}, "
-            f"block_ids={[[b.block_id for b in group] for group in computed_blocks.blocks]}\n")
-        _DEBUG_LOG.flush()
+            f"block_ids={[[b.block_id for b in group] for group in computed_blocks.blocks]}"
+        )
 
         if self.log_stats:
             assert self.prefix_cache_stats is not None
@@ -389,20 +387,19 @@ class KVCacheManager:
                 request.request_id, 0
             )
         )
-        _DEBUG_LOG.write(
+        warnings.warn(
             f"[ALLOC] {request.request_id}: num_new_tokens={num_new_tokens}, "
             f"num_new_computed={num_new_computed_tokens}, "
             f"num_tokens_to_cache={num_tokens_to_cache}, "
-            f"num_cached_before={num_cached_before}\n")
+            f"num_cached_before={num_cached_before}")
         self.coordinator.cache_blocks(request, num_tokens_to_cache)
         num_cached_after = (
             self.coordinator.single_type_managers[0].num_cached_block.get(
                 request.request_id, 0
             )
         )
-        _DEBUG_LOG.write(
-            f"[ALLOC] {request.request_id}: num_cached_after={num_cached_after}\n")
-        _DEBUG_LOG.flush()
+        warnings.warn(
+            f"[ALLOC] {request.request_id}: num_cached_after={num_cached_after}")
 
         return self.create_kv_cache_blocks(new_blocks)
 

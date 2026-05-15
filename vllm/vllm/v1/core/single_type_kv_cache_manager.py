@@ -1,12 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import itertools
-import os
+import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Sequence
-
-_DEBUG_LOG = open("/tmp/debug_kv.log", "a")
 
 from vllm.utils.math_utils import cdiv
 from vllm.v1.core.block_pool import BlockPool
@@ -175,11 +173,11 @@ class SingleTypeKVCacheManager(ABC):
         req_blocks = self.req_to_blocks[request_id]
         assert len(req_blocks) == 0
 
-        _DEBUG_LOG.write(
+        warnings.warn(
             f"[ALLOCCOMP] req={request_id}, "
             f"num_new_computed_blocks={len(new_computed_blocks)}, "
-            f"block_ids={[b.block_id for b in new_computed_blocks]}\n")
-        _DEBUG_LOG.flush()
+            f"block_ids={[b.block_id for b in new_computed_blocks]}"
+        )
         num_total_computed_tokens = (
             num_local_computed_tokens + num_external_computed_tokens
         )
