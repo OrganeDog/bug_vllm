@@ -178,9 +178,10 @@ class KVCacheManager:
         # (which happens when the request requires prompt logprobs
         # or calls a pooling model with all pooling).
         if not self.enable_caching or request.skip_reading_prefix_cache:
-            logger.info(
-                "[KVCACHE] SKIP prefix cache for %s, num_tokens=%d",
-                request.request_id, request.num_tokens,
+            print(
+                f"[KVCACHE] SKIP prefix cache for {request.request_id}, "
+                f"num_tokens={request.num_tokens}",
+                flush=True,
             )
             return self.empty_kv_cache_blocks, 0
 
@@ -197,12 +198,11 @@ class KVCacheManager:
             )
         )
 
-        logger.info(
-            "[KVCACHE] HIT for %s: num_tokens=%d, hit_tokens=%d, "
-            "block_ids=%s",
-            request.request_id, request.num_tokens,
-            num_new_computed_tokens,
-            [[b.block_id for b in group] for group in computed_blocks.blocks],
+        print(
+            f"[KVCACHE] HIT for {request.request_id}: num_tokens={request.num_tokens}, "
+            f"hit_tokens={num_new_computed_tokens}, "
+            f"block_ids={[[b.block_id for b in group] for group in computed_blocks.blocks]}",
+            flush=True,
         )
 
         if self.log_stats:
@@ -388,11 +388,12 @@ class KVCacheManager:
                 request.request_id, 0
             )
         )
-        logger.info(
-            "[ALLOC] %s: num_new_tokens=%d, num_new_computed=%d, "
-            "num_tokens_to_cache=%d, num_cached_before=%d",
-            request.request_id, num_new_tokens, num_new_computed_tokens,
-            num_tokens_to_cache, num_cached_before,
+        print(
+            f"[ALLOC] {request.request_id}: num_new_tokens={num_new_tokens}, "
+            f"num_new_computed={num_new_computed_tokens}, "
+            f"num_tokens_to_cache={num_tokens_to_cache}, "
+            f"num_cached_before={num_cached_before}",
+            flush=True,
         )
         self.coordinator.cache_blocks(request, num_tokens_to_cache)
         num_cached_after = (
@@ -400,9 +401,9 @@ class KVCacheManager:
                 request.request_id, 0
             )
         )
-        logger.info(
-            "[ALLOC] %s: num_cached_after=%d",
-            request.request_id, num_cached_after,
+        print(
+            f"[ALLOC] {request.request_id}: num_cached_after={num_cached_after}",
+            flush=True,
         )
 
         return self.create_kv_cache_blocks(new_blocks)
