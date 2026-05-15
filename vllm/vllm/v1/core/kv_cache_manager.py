@@ -2,10 +2,14 @@
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
 import itertools
-import warnings
+import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Literal, overload
+
+def _debug(msg: str) -> None:
+    sys.stderr.write(f"[DEBUG] {msg}\n")
+    sys.stderr.flush()
 
 from vllm.distributed.kv_events import KVCacheEvent
 from vllm.logger import init_logger
@@ -179,10 +183,7 @@ class KVCacheManager:
         # (which happens when the request requires prompt logprobs
         # or calls a pooling model with all pooling).
         if not self.enable_caching or request.skip_reading_prefix_cache:
-            warnings.warn(
-                f"[KVCACHE] SKIP prefix cache for {request.request_id}, "
-                f"num_tokens={request.num_tokens}"
-            )
+            _debug(f"SKIP prefix cache for {request.request_id}, num_tokens={request.num_tokens}")
             return self.empty_kv_cache_blocks, 0
 
         # NOTE: When all tokens hit the cache, we must recompute the last token
@@ -198,8 +199,8 @@ class KVCacheManager:
             )
         )
 
-        warnings.warn(
-            f"[KVCACHE] HIT for {request.request_id}: num_tokens={request.num_tokens}, "
+        _debug(
+            f"HIT for {request.request_id}: num_tokens={request.num_tokens}, "
             f"hit_tokens={num_new_computed_tokens}, "
             f"block_ids={[[b.block_id for b in group] for group in computed_blocks.blocks]}"
         )
